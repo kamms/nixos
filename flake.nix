@@ -50,7 +50,6 @@
     system = "x86_64-linux";
   in
   rec {
-    homeManagerModules = import ./modules/home-manager;
 
     nixosConfigurations = {
       ${vars.systemname} = nixpkgs.lib.nixosSystem {
