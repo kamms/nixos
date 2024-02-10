@@ -203,26 +203,31 @@
             path = "/home/${vars.user}/Documents"; 
             devices = [ "newvault" ]; 
             ignorePerms = true;
+            type = "sendonly";
           };
           "pictures" = { 
             path = "/home/${vars.user}/Pictures"; 
             devices = [ "newvault" ]; 
             ignorePerms = true;
+            type = "sendonly";
           };
           "flakes" = { 
             path = "/home/${vars.user}/Flakes"; 
             devices = [ "newvault" ]; 
             ignorePerms = true;
+            type = "sendonly";
           };
           "downloads" = { 
-            path = "/home/${vars.user}/Downloads"; 
+            path = "/home/${vars.user}/Downloads/Synced"; 
             devices = [ "newvault" ]; 
             ignorePerms = true;
+            type = "sendonly";
           };
           "dotfiles" = { 
             path = "/home/${vars.user}/.dotfiles"; 
             devices = [ "newvault" ]; 
             ignorePerms = true;
+            type = "sendonly";
           };
         };
       };

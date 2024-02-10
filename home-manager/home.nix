@@ -100,7 +100,22 @@ in {
   };
   # Nicely reload system units when changing configs
   #systemd.user.startServices = "sd-switch";
-
+  systemd.user.services.synthingIgnore = {
+    script = ''
+      for ignoredir in Downloads Pictures Documents .dotfiles Flakes 
+      do
+        echo "" >> /home/"${vars.user}"/${ignoredir}/testignore
+        for ignorefile in **.part **.crdownload **.temp
+        do
+          echo $ignorefile >> /home/"${vars.user}"/${ignoredir}/testignore
+        done
+      done
+    '';
+    wantedBy = ['multi-user.target'];
+    serviceConfig = {
+      Type = "oneshot";
+    };
+  };
   # https://nixos.wiki/wiki/FAQ/When_do_I_update_stateVersion
   home.stateVersion = "${vars.hm_stateversion}";
 
