@@ -5,9 +5,12 @@
   lib,
   config,
   pkgs,
-  vars
+  outputs,
+  vars,
   ...
-}: {
+}: 
+let sunshine = pkgs.sunshine;
+in {
   # You can import other home-manager modules here
   imports = [
     # If you want to use home-manager modules from other flakes (such as nix-colors):
@@ -35,35 +38,15 @@
       # Disable if you don't want unfree packages
       allowUnfree = true;
       # Workaround for https://github.com/nix-community/home-manager/issues/2942
-      allowUnfreePredicate = _: true;
+      allowUnfreePredicate = true;
     };
   };
 
   # TODO: Set your username
   home = {
-    username = "${vars.user}";
+    username = vars.user;
     homeDirectory = "/home/${vars.user}";
   };
-
-  # Add stuff for your user as you see fit:
-  # programs.neovim.enable = true;
-  # home.packages = with pkgs; [ steam ];
-
-  # Enable home-manager and git
-  programs = {
-    home-manager.enable = true;
-    git.enable = true;
-    gamemode.enable = true;
-    gamescope.enable = true;
-    steam.enable = true;
-  }
-  programs.home-manager.enable = true;
-
-  # Nicely reload system units when changing configs
-  systemd.user.startServices = "sd-switch";
-
-  # https://nixos.wiki/wiki/FAQ/When_do_I_update_stateVersion
-  home.stateVersion = "${vars.stateversion}";
 
   ######################################
   ##        user packages             ##
@@ -77,20 +60,50 @@
     gamescope
     tartube-yt-dlp
     pcloud
+    sunshine
 #    obsidian
     p3x-onenote
     vial
     via
     #dropbox
+    syncthing
     maestral
     maestral-gui
     gphotos-sync
     deja-dup
+    nerdfonts
+    #(nerdfonts.override { fonts = [ "FiraCode" ]; })
   # DEV
     go
     # Gnome extensions
     gnome.gnome-tweaks
   ];
+  # Add stuff for your user as you see fit:
+  # programs.neovim.enable = true;
+  #home.packages = with pkgs; [ steam ];
+
+  # Enable home-manager and git
+  programs = {
+    home-manager.enable = true;
+    git = {
+      enable = true;
+      userName  = "${vars.user_desc}";
+      userEmail = "${vars.user_email}";
+      difftastic = {
+        enable = true;
+        display = "side-by-side-show-both";
+      };
+    };
+    #gamemode.enable = true;
+    #gamescope.enable = true;
+  #  steam.enable = true;
+  };
+  # Nicely reload system units when changing configs
+  #systemd.user.startServices = "sd-switch";
+
+  # https://nixos.wiki/wiki/FAQ/When_do_I_update_stateVersion
+  home.stateVersion = "${vars.hm_stateversion}";
+
 
   ######################################
   ##        dconf settings            ##

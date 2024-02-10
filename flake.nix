@@ -7,7 +7,8 @@
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";         # Stable Nix Packages
 
     # Home manager
-    home-manager.url = "github:nix-community/home-manager/release-23.05";
+    #home-manager.url = "github:nix-community/home-manager/master";
+    home-manager.url = "github:nix-community/home-manager/release-23.11";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
     # TODO: Add any other flake you might need
@@ -33,33 +34,41 @@
     nixpkgs,
     home-manager,
     ...
-  } @ inputs: let
+  } @ inputs: 
+  let
     inherit (self) outputs;
     vars = {    # Variables Used In Flake
       user = "kamms";
       user_desc = "Kari Salokas";
+      user_email = "kari.salokas@gmail.com";
       user_groups = [ "networkmanager" "wheel" "docker" "libvirtd" "input"];
       editor = "nano";
       systemname = "ukkonix";
       stateversion = "23.11";
+      hm_stateversion = "23.11";
     };
-  in {
+    system = "x86_64-linux";
+  in
+  rec {
+    homeManagerModules = import ./modules/home-manager;
+
     nixosConfigurations = {
       ${vars.systemname} = nixpkgs.lib.nixosSystem {
-        specialArgs = {inherit inputs outputs vars;};
-        modules = [./nixos/configuration.nix];
-      };
-    };
-
-    # Available through 'home-manager --flake .#your-username@your-hostname'
-    homeConfigurations = {
-      # FIXME replace with your username@hostname
-      "${vars.user}@${vars.systemname}" = home-manager.lib.homeManagerConfiguration {
-        pkgs = nixpkgs.legacyPackages.x86_64-linux; 
-        extraSpecialArgs = {inherit inputs outputs;};
-        # > Our main home-manager configuration file <
-        modules = [./home-manager/home.nix];
+        system = "x86_64-linux";
+        specialArgs = {inherit system inputs outputs vars;};
+        modules = [
+          ./nixos/configuration.nix
+          home-manager.nixosModules.home-manager{
+            home-manager = {
+              useUserPackages = true;
+              #useGlobalPkgs = true;
+              extraSpecialArgs = { inherit inputs outputs vars;};
+              users.${vars.user} = ./home-manager/home.nix;
+            };
+          }
+        ];
       };
     };
   };
 }
+

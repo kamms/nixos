@@ -1,13 +1,8 @@
 # This is your system's configuration file.
 # Use this to configure your system environment (it replaces /etc/nixos/configuration.nix)
+{ inputs, lib, config, pkgs, vars, ... }: 
+  
 {
-  inputs,
-  lib,
-  config,
-  pkgs,
-  vars,
-  ...
-}: {
   # You can import other NixOS modules here
   imports = [
     # If you want to use modules from other flakes (such as nixos-hardware):
@@ -43,19 +38,19 @@
 
   # This will add each flake input as a registry
   # To make nix3 commands consistent with your flake
-  nix.registry = (lib.mapAttrs (_: flake: {inherit flake;})) ((lib.filterAttrs (_: lib.isType "flake")) inputs);
+  #nix.registry = (lib.mapAttrs (_: flake: {inherit flake;})) ((lib.filterAttrs (_: lib.isType "flake")) inputs);
 
   # This will additionally add your inputs to the system's legacy channels
   # Making legacy nix commands consistent as well, awesome!
-  nix.nixPath = ["/etc/nix/path"];
-  environment.etc =
-    lib.mapAttrs'
-    (name: value: {
-      name = "nix/path/${name}";
-      value.source = value.flake;
-    })
-    config.nix.registry;
-
+  #nix.nixPath = ["/etc/nix/path"];
+  #environment.etc =
+  #  lib.mapAttrs'
+  #  (name: value: {
+  #    name = "nix/path/${name}";
+  #    value.source = value.flake;
+  #  })
+  #  config.nix.registry;
+#
 
   nix = {
     gc = {
@@ -71,10 +66,10 @@
       experimental-features = "nix-command flakes";
       # Deduplicate and optimize nix store
       auto-optimise-store = true;
-      trusted-users = ["root" "fafa"];
+      trusted-users = ["root" "kamms"];
     };
   };
-  
+
 #########################################################
 ##                config from old stuff                ##
 #########################################################
@@ -82,7 +77,10 @@
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
   boot.kernelModules = [ "uinput" ];
-
+  #boot.kernelParams = [
+  #  "video=DP-1:2560x1440@165"
+  #  "video=DP-2:1920x1080@60"
+  #];
   # Configure console keymap
   console.keyMap = "fi";
 
@@ -119,10 +117,16 @@
 
   # Set your time zone.
   time.timeZone = "Europe/Helsinki";
-
+  
   # Enable sound with pipewire.
   sound.enable = true;
-  hardware.pulseaudio.enable = false;
+  hardware = {
+    pulseaudio.enable = false;
+    opengl = {
+      driSupport = true;
+      driSupport32Bit = true;
+    };
+  };
   security.rtkit.enable = true;
 
   services = {
@@ -164,44 +168,87 @@
     udev.extraRules = ''
       KERNEL=="uinput", GROUP="input", MODE="0660", OPTIONS+="static_node=uinput"
     '';
+    openssh = {
+      enable = true;
+      settings = {
+        # Forbid root login through SSH.
+        PermitRootLogin = "no";
+        # Use keys only. Remove if you want to SSH using password (not recommended)
+        PasswordAuthentication = false;
+      };
+    };
+    syncthing = {
+      enable = true;
+      openDefaultPorts = true;
+      dataDir = "/home/${vars.user}";
+      configDir = "/home/${vars.user}/.config/syncthing";
+      user = "${vars.user}";
+      overrideDevices = true;
+      overrideFolders = true;
+      settings = {
+        gui = {
+            user = "${vars.user}";
+            password = "syncthingpassword";
+        };
+        devices = {
+          "drawing-laptop" = { 
+            id = "FLEWFPB-7UUHJEX-2BTZ36J-G52BIQ6-EETPH7K-PEQK7VS-PMILL3W-UZYBYA6"; 
+          };
+          "newvault" = {
+            id = "63YSERC-YEH6NAK-GNOEZLO-AYDVN2G-N44AFHA-V3W7XKA-43ADXGL-L7PFPQT";
+          };
+        };
+        folders = {
+          "documents" = { 
+            path = "/home/${vars.user}/Documents"; 
+            devices = [ "newvault" ]; 
+            ignorePerms = true;
+          };
+          "pictures" = { 
+            path = "/home/${vars.user}/Pictures"; 
+            devices = [ "newvault" ]; 
+            ignorePerms = true;
+          };
+          "flakes" = { 
+            path = "/home/${vars.user}/Flakes"; 
+            devices = [ "newvault" ]; 
+            ignorePerms = true;
+          };
+          "downloads" = { 
+            path = "/home/${vars.user}/Downloads"; 
+            devices = [ "newvault" ]; 
+            ignorePerms = true;
+          };
+          "dotfiles" = { 
+            path = "/home/${vars.user}/.dotfiles"; 
+            devices = [ "newvault" ]; 
+            ignorePerms = true;
+          };
+        };
+      };
+    };
   };
   
   # Workaround for GNOME autologin: https://github.com/NixOS/nixpkgs/issues/103746#issuecomment-945091229
-  #systemd.services."getty@tty1".enable = false;
-  #systemd.services."autovt@tty1".enable = false;
+  systemd.services."getty@tty1".enable = false;
+  systemd.services."autovt@tty1".enable = false;
 
-  hardware = {
-    opengl = {                                  # Hardware Accelerated Video
-      enable = true;
-      extraPackages = with pkgs; [
-        rocm-opencl-icd
-        rocm-opencl-runtime
-        vaapiVdpau
-        libvdpau-va-gl
-        amdvlk
-      ];
-      extraPackages32 = with pkgs; [
-        driversi686Linux.amdvlk
-      ];
-      driSupport = true;
-      driSupport32Bit = true;
-    };
-  };
 # For virtualization
 #  virtualisation.podman.enable = true;
   virtualisation.docker.enable = true;
   virtualisation.libvirtd.enable = true;
 
-
+  
   environment = {
     systemPackages = with pkgs; [
       firefox
-      ungoogled-chromium
+      #ungoogled-chromium
       thunderbird
-    #  obsidian
+      obsidian
       onlyoffice-bin
       libreoffice
       vlc
+      sunshine
       krita
       gimp-with-plugins
       calibre
@@ -226,6 +273,7 @@
       vim
       rclone
       rsync
+      image-roll
       lsof
       nano
       usbutils
@@ -241,7 +289,6 @@
       lynis
       htop
       glances
-      #sunshine
       psmisc
       flatpak
       appimage-run
@@ -251,12 +298,13 @@
       libva-utils
       cifs-utils
       wget
+      vulkan-tools 
       duf
 #Libraries
       #driversi686Linux.mesa
       #vulkan-extension-layer
       #vulkan-headers
-      #vulkan-tools
+      #vulkan-tools 
       #vulkan-validation-layers
       #x265
 #Gnome
@@ -298,7 +346,20 @@
     ]);
   };
 
-
+  security.wrappers.sunshine = {
+        owner = "root";
+        group = "root";
+        capabilities = "cap_sys_admin+p";
+        source = "${pkgs.sunshine}/bin/sunshine";
+      };
+  systemd.user.services.sunshine =
+      {
+        description = "sunshine";
+        wantedBy = [ "graphical-session.target" ];
+        serviceConfig = {
+          ExecStart = "${config.security.wrapperDir}/sunshine";
+        };
+      };
   programs = {
     kdeconnect = {                                    # GSConnect
       enable = true;
@@ -313,29 +374,23 @@
 ##            end of config from old stuff             ##
 #########################################################
   networking = {
-    hostName = "${vars.systemname}";
-    firewall.allowedTCPPorts = [ 22 48010];
+    hostName = "${vars.systemname}"; 
+    # Syncthing ports: 8384 for remote access to GUI
+    # 22000 TCP and/or UDP for sync traffic
+    # 21027/UDP for discovery
+    # source: https://docs.syncthing.net/users/firewall.html
+    # 48010 is sunshine, if it will ever work.
+    firewall.allowedTCPPorts = [ 22 48010 8384 22000 ]; 
+    firewall.allowedUDPPorts = [ 22000 21027 ]; 
   };
-
   users.users.${vars.user} = {
     isNormalUser = true;
-    description = vars.user_desc;
+    description = "${vars.user_desc}";
     extraGroups = vars.user_groups;
+    initialPassword = "${vars.user}";
     openssh.authorizedKeys.keys = [
     # TODO: Add your SSH public key(s) here, if you plan on using SSH to connect
     ];
-  };
-
-  # This setups a SSH server. Very important if you're setting up a headless system.
-  # Feel free to remove if you don't need it.
-  services.openssh = {
-    enable = true;
-    settings = {
-      # Forbid root login through SSH.
-      PermitRootLogin = "no";
-      # Use keys only. Remove if you want to SSH using password (not recommended)
-      PasswordAuthentication = false;
-    };
   };
 
   # This value determines the NixOS release from which the default

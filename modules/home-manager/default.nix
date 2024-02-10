@@ -1,0 +1,3 @@
+{
+  sunshine = ./sunshine.nix;
+}
