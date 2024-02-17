@@ -9,40 +9,16 @@
   vars,
   ...
 }: 
-let sunshine = pkgs.sunshine;
-in {
-  # You can import other home-manager modules here
-  imports = [
-    # If you want to use home-manager modules from other flakes (such as nix-colors):
-    # inputs.nix-colors.homeManagerModule
 
-    # You can also split up your configuration and import pieces of it here:
-    # ./nvim.nix
-  ];
+{
 
   nixpkgs = {
-    # You can add overlays here
-    overlays = [
-      # If you want to use overlays exported from other flakes:
-      # neovim-nightly-overlay.overlays.default
-
-      # Or define it inline, for example:
-      # (final: prev: {
-      #   hi = final.hello.overrideAttrs (oldAttrs: {
-      #     patches = [ ./change-hello-to-hi.patch ];
-      #   });
-      # })
-    ];
-    # Configure your nixpkgs instance
     config = {
-      # Disable if you don't want unfree packages
       allowUnfree = true;
       # Workaround for https://github.com/nix-community/home-manager/issues/2942
       allowUnfreePredicate = true;
     };
   };
-
-  # TODO: Set your username
   home = {
     username = vars.user;
     homeDirectory = "/home/${vars.user}";
@@ -72,17 +48,12 @@ in {
     gphotos-sync
     deja-dup
     nerdfonts
-    #(nerdfonts.override { fonts = [ "FiraCode" ]; })
-  # DEV
-    go
+    gamemode
+    gamescope
     # Gnome extensions
     gnome.gnome-tweaks
+    gnomeExtensions.gamemode-indicator-in-system-settings
   ];
-  # Add stuff for your user as you see fit:
-  # programs.neovim.enable = true;
-  #home.packages = with pkgs; [ steam ];
-
-  # Enable home-manager and git
   programs = {
     home-manager.enable = true;
     git = {
@@ -94,28 +65,9 @@ in {
         display = "side-by-side-show-both";
       };
     };
-    #gamemode.enable = true;
-    #gamescope.enable = true;
-  #  steam.enable = true;
   };
   # Nicely reload system units when changing configs
   #systemd.user.startServices = "sd-switch";
-  systemd.user.services.synthingIgnore = {
-    script = ''
-      for ignoredir in Downloads Pictures Documents .dotfiles Flakes 
-      do
-        echo "" >> /home/"${vars.user}"/${ignoredir}/testignore
-        for ignorefile in **.part **.crdownload **.temp
-        do
-          echo $ignorefile >> /home/"${vars.user}"/${ignoredir}/testignore
-        done
-      done
-    '';
-    wantedBy = ['multi-user.target'];
-    serviceConfig = {
-      Type = "oneshot";
-    };
-  };
   # https://nixos.wiki/wiki/FAQ/When_do_I_update_stateVersion
   home.stateVersion = "${vars.hm_stateversion}";
 
@@ -125,10 +77,6 @@ in {
   ######################################
 
   dconf.settings = {
-    "org/virt-manager/virt-manager/connections" = {
-      autoconnect = ["qemu:///system"];
-      uris = ["qemu:///system"];
-    };
     "org/gnome/shell" = {
       favorite-apps = [
         "firefox.desktop"
@@ -139,7 +87,6 @@ in {
         "org.gnome.Nautilus.desktop"
         "org.gnome.Console.desktop"
         "org.remmina.remmina.desktop"
-        "virt-manager.desktop"
       ];
       disable-user-extensions = false;
       remember-mount-password = true;

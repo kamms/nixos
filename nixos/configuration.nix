@@ -1,57 +1,28 @@
-# This is your system's configuration file.
-# Use this to configure your system environment (it replaces /etc/nixos/configuration.nix)
 { inputs, lib, config, pkgs, vars, ... }: 
   
 {
   # You can import other NixOS modules here
   imports = [
-    # If you want to use modules from other flakes (such as nixos-hardware):
-    # inputs.hardware.nixosModules.common-cpu-amd
-    # inputs.hardware.nixosModules.common-ssd
-
-    # You can also split up your configuration and import pieces of it here:
-    # ./users.nix
-
-    # Import your generated (nixos-generate-config) hardware configuration
     ./hardware-configuration.nix
   ];
 
   nixpkgs = {
-    # You can add overlays here
-    overlays = [
-      # If you want to use overlays exported from other flakes:
-      # neovim-nightly-overlay.overlays.default
-
-      # Or define it inline, for example:
-      # (final: prev: {
-      #   hi = final.hello.overrideAttrs (oldAttrs: {
-      #     patches = [ ./change-hello-to-hi.patch ];
-      #   });
-      # })
-    ];
     config = {
-      # Disable if you don't want unfree packages
       allowUnfree = true;
       permittedInsecurePackages = lib.optional (pkgs.obsidian.version == "1.4.16") "electron-25.9.0";
     };
   };
 
-  # This will add each flake input as a registry
-  # To make nix3 commands consistent with your flake
-  #nix.registry = (lib.mapAttrs (_: flake: {inherit flake;})) ((lib.filterAttrs (_: lib.isType "flake")) inputs);
-
-  # This will additionally add your inputs to the system's legacy channels
-  # Making legacy nix commands consistent as well, awesome!
-  #nix.nixPath = ["/etc/nix/path"];
-  #environment.etc =
-  #  lib.mapAttrs'
-  #  (name: value: {
-  #    name = "nix/path/${name}";
-  #    value.source = value.flake;
-  #  })
-  #  config.nix.registry;
-#
-
+  environment.etc = {
+    "wireplumber/bluetooth.lua.d/51-bluez-config.lua".text = ''
+      bluez_monitor.properties = {
+        ["bluez5.enable-sbc-xq"] = true,
+        ["bluez5.enable-msbc"] = true,
+        ["bluez5.enable-hw-volume"] = true,
+        ["bluez5.headset-roles"] = "[ hsp_hs hsp_ag hfp_hf hfp_ag ]"
+      }
+    '';
+  };
   nix = {
     gc = {
       automatic = true;
@@ -62,28 +33,21 @@
       automatic = true;
     };
     settings = {
-      # Enable flakes and new 'nix' command
       experimental-features = "nix-command flakes";
-      # Deduplicate and optimize nix store
       auto-optimise-store = true;
       trusted-users = ["root" "kamms"];
     };
   };
 
-#########################################################
-##                config from old stuff                ##
-#########################################################
   # Bootloader.
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
+  
+  ## This was added for sunshine
   boot.kernelModules = [ "uinput" ];
-  #boot.kernelParams = [
-  #  "video=DP-1:2560x1440@165"
-  #  "video=DP-2:1920x1080@60"
-  #];
-  # Configure console keymap
   console.keyMap = "fi";
 
+  ## linking mounted drives
   system.userActivationScripts.linktosharedfolder.text = ''
     if [[ ! -h "$HOME/Drives" ]]; then
       ln -s "/mnt/Drives" "$HOME/Drives"
@@ -137,10 +101,6 @@
           enable = true;
           wayland = true;
         };
-        #autoLogin = {
-        #  enable = true;
-        #  user = "kamms";
-        #};
       };
       desktopManager = {
         gnome = {
@@ -243,11 +203,14 @@
   virtualisation.docker.enable = true;
   virtualisation.libvirtd.enable = true;
 
+  ######################################
+  ##          packages                ##
+  ######################################
   
   environment = {
     systemPackages = with pkgs; [
       firefox
-      #ungoogled-chromium
+      ungoogled-chromium
       thunderbird
       obsidian
       onlyoffice-bin
@@ -306,12 +269,12 @@
       vulkan-tools 
       duf
 #Libraries
-      #driversi686Linux.mesa
-      #vulkan-extension-layer
-      #vulkan-headers
-      #vulkan-tools 
-      #vulkan-validation-layers
-      #x265
+      driversi686Linux.mesa
+      vulkan-extension-layer
+      vulkan-headers
+      vulkan-tools 
+      vulkan-validation-layers
+      x265
 #Gnome
       gnome.adwaita-icon-theme
       gnome.dconf-editor
@@ -370,14 +333,11 @@
       enable = true;
       package = pkgs.gnomeExtensions.gsconnect;
     };
-   # virt-manager = {
-    #  enable = true;
-    #};
+    virt-manager = {
+      enable = true;
+    };
   };
 
-#########################################################
-##            end of config from old stuff             ##
-#########################################################
   networking = {
     hostName = "${vars.systemname}"; 
     # Syncthing ports: 8384 for remote access to GUI
